@@ -2,7 +2,7 @@ import Foundation
 
 struct Frame: Decodable
 {
-    let x, y, w, h: Float
+    let x, y, w, h: Double
 }
 
 struct Display: Decodable

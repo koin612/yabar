@@ -5,10 +5,10 @@ class YabarController : NSObject, NSApplicationDelegate
     let displays: [Display]
     let spaces: [Space]
     
-    init(_ displays: [Display])
+    init(_ displays: [Display], _ spaces: [Space])
     {
         self.displays = displays
-        self.spaces = Yabai.querySpaces()
+        self.spaces = spaces
     }
     
     func applicationDidFinishLaunching(_ notification: Notification)
@@ -30,11 +30,11 @@ class YabarController : NSObject, NSApplicationDelegate
     private func createStatusBar(_ display: Display)
     {
         let bar = NSWindow.init(
-            contentRect: NSMakeRect(
-                CGFloat(display.frame.x),
-                CGFloat(display.frame.y),
-                CGFloat(display.frame.w),
-                26),
+            contentRect: NSRect(
+                x: display.frame.x,
+                y: 0.0,
+                width: display.frame.w,
+                height: 26.0),
             styleMask: .borderless,
             backing: .buffered,
             defer: false)
@@ -47,30 +47,68 @@ class YabarController : NSObject, NSApplicationDelegate
             alpha: 1)
         bar.collectionBehavior = [
             .canJoinAllSpaces,
-            .transient,
+//            .transient,
+            .fullScreenNone,
+            .stationary,
             .ignoresCycle]
         bar.isOpaque = false
-//        bar.level = .floating
+        bar.level = .floating
         bar.makeKeyAndOrderFront(nil)
-    }
-    
-    private func createDateTime()
-    {
-        let date = Date()
-        let calendar = Calendar.current
-        let hour = calendar.component(.hour, from: date)
-        let minute = calendar.component(.minute, from: date)
-
-        let month = calendar.component(.month, from: date)
-        let day = calendar.component(.day, from: date)
-
-        print("\(hour):\(minute)")
-
     }
     
     private func createAndPopulateView(_ display: Display) -> NSView
     {
         let view = NSView()
+        addSpaceButtons(display, view)
+        
+        addLabel("| \(createDateTime())", display, view)
+        addLabel("\(Yabai.queryBattery())%", display, view)
+        
+        return view
+    }
+    
+    private func addLabel(_ string: String, _ display: Display, _ view: NSView)
+    {
+        let textfield = NSTextField(string: string)
+        let x = findFreeSpace(display, view) - Double(textfield.frame.width)
+        textfield.setFrameOrigin(NSPoint(x: x, y: 0))
+        textfield.alignment = .center
+        textfield.isBezeled = false
+        textfield.drawsBackground = false
+        textfield.isEditable = false
+        textfield.isSelectable = false
+        view.addSubview(textfield)
+    }
+    
+    private func findFreeSpace(_ display: Display, _ view: NSView) -> Double
+    {
+        let filtered = view.subviews.filter { $0 is NSTextField }
+        return filtered.isEmpty ?
+            display.frame.w
+        :
+        filtered
+            .map { Double($0.frame.origin.x) }
+            .min()!
+    }
+    
+    private func createDateTime() -> String
+    {
+        let date = Date()
+        let calendar = Calendar.current
+        
+        let year = calendar.component(.year, from: date)
+        let month = calendar.component(.month, from: date)
+        let day = calendar.component(.day, from: date)
+        
+        let hour = calendar.component(.hour, from: date)
+        let minute = calendar.component(.minute, from: date)
+        
+        return String(format: "%02d.%02d.%d %02d:%02d",
+                      day, month, year, hour, minute)
+    }
+    
+    private func addSpaceButtons(_ display: Display, _ view: NSView)
+    {
         for (index, space) in display.spaces.enumerated() {
             let button = NSButton(
                 frame: NSRect(x: 26 * index, y: 0, width: 26, height: 26))
@@ -102,7 +140,7 @@ class YabarController : NSObject, NSApplicationDelegate
             button.action = #selector(changeSpace(_:))
             view.addSubview(button)
         }
-        return view
     }
 }
+
 

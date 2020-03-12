@@ -11,18 +11,29 @@ class Yabai
     {
         return try! JSONDecoder().decode(
             [Space].self,
-            from: sh("yabai -m query --spaces"))
+            from: shd("yabai -m query --spaces"))
     }
     
     static func queryDisplays() -> [Display]
     {
         return try! JSONDecoder().decode(
             [Display].self,
-            from: sh("yabai -m query --displays"))
+            from: shd("yabai -m query --displays"))
     }
 
+    static func queryBattery() -> String
+    {
+        // consider bridging-headers for IOPowerSources.h
+        return sh("pmset -g batt | grep -Eo '\\d+%' | cut -d% -f1")
+    }
+    
+    private static func shd(_ command: String) -> Data
+    {
+        return sh(command).data(using: .utf8)!
+    }
+    
     @discardableResult
-    private static func sh(_ command: String) -> Data
+    private static func sh(_ command: String) -> String
     {
         let task = Process()
         task.launchPath = "/bin/sh"
@@ -38,6 +49,6 @@ class Yabai
         let output: String = NSString(
             data: data,
             encoding: String.Encoding.utf8.rawValue)! as String
-        return output.data(using: .utf8)!
+        return output.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
