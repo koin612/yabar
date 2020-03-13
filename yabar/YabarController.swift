@@ -18,10 +18,6 @@ class YabarController : NSObject, NSApplicationDelegate
         }
     }
     
-    func applicationDidUpdate(_ notification: Notification)
-    {
-    }
-    
     @objc private func changeSpace(_ sender: NSButton)
     {
         Yabai.changeSpace(sender.title)
